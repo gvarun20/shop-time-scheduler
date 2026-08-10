@@ -40,9 +40,12 @@ Open [http://localhost:3000](http://localhost:3000)
 | `sam@shop.local` | Employee |
 | `riley@shop.local` | Employee |
 
-## GitHub
+## Live links
 
-Public repo: [github.com/gvarun20/shop-time-scheduler](https://github.com/gvarun20/shop-time-scheduler)
+- **GitHub**: [github.com/gvarun20/shop-time-scheduler](https://github.com/gvarun20/shop-time-scheduler)
+- **Vercel**: [shop-time-scheduler.vercel.app](https://shop-time-scheduler.vercel.app)
+
+> Production needs a hosted Postgres `DATABASE_URL` + `AUTH_SECRET` in the Vercel project env (SQLite is for local only).
 
 CI workflow template lives at `docs/github-ci.yml` (move to `.github/workflows/ci.yml` after granting the GitHub `workflow` OAuth scope).
 
