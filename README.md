@@ -40,19 +40,22 @@ Open [http://localhost:3000](http://localhost:3000)
 | `sam@shop.local` | Employee |
 | `riley@shop.local` | Employee |
 
-## Deploy on GitHub + Vercel
+## GitHub
 
-1. Push this repo to GitHub.
-2. Import the repo in [Vercel](https://vercel.com/new).
-3. Create a free Postgres database (Neon, Supabase, or Vercel Postgres).
-4. Set environment variables in Vercel:
+Public repo: [github.com/gvarun20/shop-time-scheduler](https://github.com/gvarun20/shop-time-scheduler)
+
+CI workflow template lives at `docs/github-ci.yml` (move to `.github/workflows/ci.yml` after granting the GitHub `workflow` OAuth scope).
+
+## Deploy on Vercel
+
+1. Import the repo in [Vercel](https://vercel.com/new) → select `gvarun20/shop-time-scheduler`.
+2. Create a free Postgres database (Neon, Supabase, or Vercel Postgres).
+3. Set environment variables in Vercel:
    - `DATABASE_URL` — Postgres connection string
    - `AUTH_SECRET` — long random string
-5. Update `prisma/schema.prisma` datasource provider to `postgresql` (or keep SQLite only for local demos).
-6. Run migrations against production: `npx prisma db push` with the prod URL, then seed if desired.
-7. Redeploy.
-
-GitHub Actions workflow (`.github/workflows/ci.yml`) runs lint/build on pull requests.
+4. Change `prisma/schema.prisma` datasource `provider` to `postgresql` for production.
+5. In Vercel build settings, ensure install/build run `prisma generate` (included in `npm run build`).
+6. After first deploy, run `npx prisma db push` + `npm run db:seed` against the prod `DATABASE_URL`.
 
 ## Project map
 
