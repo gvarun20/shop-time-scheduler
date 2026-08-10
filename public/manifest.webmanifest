@@ -1,0 +1,17 @@
+{
+  "name": "Corner Shop Shifts",
+  "short_name": "ShopShifts",
+  "description": "Shift schedule and coverage alerts",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#eef3f1",
+  "theme_color": "#0f6b5c",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

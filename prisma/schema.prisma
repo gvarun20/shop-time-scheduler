@@ -1,0 +1,132 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String   @id @default(cuid())
+  name            String
+  email           String   @unique
+  phone           String?
+  pinHash         String
+  role            String   @default("EMPLOYEE") // ADMIN | EMPLOYEE
+  maxHoursPerWeek Int      @default(20)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  availabilities   Availability[]
+  shifts           Shift[]           @relation("AssignedShifts")
+  coverageRequests CoverageRequest[] @relation("RequestedBy")
+  coveredRequests  CoverageRequest[] @relation("FilledBy")
+  notifications    Notification[]
+  declines          CoverageDecline[]
+}
+
+model Availability {
+  id           String    @id @default(cuid())
+  userId       String
+  dayOfWeek    Int
+  startTime    String
+  endTime      String
+  isRecurring  Boolean   @default(true)
+  specificDate DateTime?
+  isException  Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model StoreHours {
+  id        String  @id @default(cuid())
+  dayOfWeek Int     @unique
+  openTime  String
+  closeTime String
+  isClosed  Boolean @default(false)
+}
+
+model ShopSettings {
+  id                     String  @id @default("default")
+  shopName               String  @default("Corner Shop")
+  minShiftMinutes        Int     @default(60)
+  maxShiftMinutes        Int     @default(480)
+  minNoticeMinutes       Int     @default(120)
+  maxHoursPerDay         Int     @default(8)
+  maxHoursPerWeek        Int     @default(20)
+  minGapMinutes          Int     @default(0)
+  coverageTimeoutMinutes Int     @default(20)
+  autoAcceptCoverage     Boolean @default(true)
+}
+
+model Shift {
+  id             String   @id @default(cuid())
+  date           DateTime
+  startTime      String
+  endTime        String
+  assignedUserId String?
+  status         String   @default("OPEN") // CONFIRMED | OPEN | NEEDS_COVERAGE
+  notes          String?
+  parentShiftId  String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  assignedUser     User?             @relation("AssignedShifts", fields: [assignedUserId], references: [id])
+  parentShift      Shift?            @relation("ShiftSplits", fields: [parentShiftId], references: [id])
+  childShifts      Shift[]           @relation("ShiftSplits")
+  coverageRequests CoverageRequest[]
+
+  @@index([date])
+  @@index([assignedUserId])
+}
+
+model CoverageRequest {
+  id                String    @id @default(cuid())
+  originalShiftId   String
+  requestedByUserId String
+  uncoveredStart    String
+  uncoveredEnd      String
+  status            String    @default("OPEN") // OPEN | FILLED | EXPIRED | CANCELLED
+  filledByUserId    String?
+  isEmergency       Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  expiresAt         DateTime
+  filledAt          DateTime?
+
+  originalShift Shift             @relation(fields: [originalShiftId], references: [id], onDelete: Cascade)
+  requestedBy   User              @relation("RequestedBy", fields: [requestedByUserId], references: [id])
+  filledBy      User?             @relation("FilledBy", fields: [filledByUserId], references: [id])
+  declines      CoverageDecline[]
+
+  @@index([status])
+}
+
+model CoverageDecline {
+  id                String   @id @default(cuid())
+  coverageRequestId String
+  userId            String
+  createdAt         DateTime @default(now())
+
+  coverageRequest CoverageRequest @relation(fields: [coverageRequestId], references: [id], onDelete: Cascade)
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([coverageRequestId, userId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String // REMINDER | COVERAGE_ALERT | SCHEDULE_UPDATE | ESCALATION
+  message   String
+  read      Boolean  @default(false)
+  relatedId String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+}
