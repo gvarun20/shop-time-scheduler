@@ -20,6 +20,7 @@ export default function AdminPage() {
   const [startTime, setStartTime] = useState("14:00");
   const [endTime, setEndTime] = useState("18:00");
   const [assignedUserId, setAssignedUserId] = useState("");
+  const [isOvertime, setIsOvertime] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -60,11 +61,12 @@ export default function AdminPage() {
         startTime,
         endTime,
         assignedUserId: assignedUserId || null,
+        isOvertime,
       }),
     });
     const data = await res.json();
     if (!res.ok) setError(data.error || "Failed");
-    else setMessage("Shift created and team notified.");
+    else setMessage(isOvertime ? "Overtime shift published." : "Shift created and team notified.");
   };
 
   const addEmployee = async (e: React.FormEvent) => {
@@ -156,6 +158,15 @@ export default function AdminPage() {
             />
           </label>
         </div>
+        <label className="flex items-center gap-2 text-sm font-semibold">
+          <input
+            type="checkbox"
+            checked={isOvertime}
+            onChange={(e) => setIsOvertime(e.target.checked)}
+            className="h-4 w-4 rounded border-line"
+          />
+          Overtime (allowed after shop closing)
+        </label>
         <button type="submit" className="rounded-xl bg-brand px-4 py-2.5 text-sm font-bold text-white">
           Publish shift
         </button>

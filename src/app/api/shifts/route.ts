@@ -52,6 +52,7 @@ const createSchema = z.object({
   endTime: z.string(),
   assignedUserId: z.string().nullable().optional(),
   notes: z.string().optional(),
+  isOvertime: z.boolean().optional(),
 });
 
 export async function POST(req: Request) {
@@ -59,6 +60,7 @@ export async function POST(req: Request) {
     await requireAdmin();
     const body = createSchema.parse(await req.json());
     const date = startOfDay(parseDateKey(body.date));
+    const isOvertime = Boolean(body.isOvertime);
 
     if (body.assignedUserId) {
       const check = await validateShiftAssignment({
@@ -66,6 +68,7 @@ export async function POST(req: Request) {
         date,
         startTime: body.startTime,
         endTime: body.endTime,
+        isOvertime,
       });
       // Soft-warn for availability; hard-fail for conflicts/hours
       if (!check.ok && !check.error.startsWith("Warning")) {
@@ -81,6 +84,7 @@ export async function POST(req: Request) {
         assignedUserId: body.assignedUserId || null,
         status: body.assignedUserId ? "CONFIRMED" : "OPEN",
         notes: body.notes,
+        isOvertime,
       },
       include: {
         assignedUser: { select: { id: true, name: true, email: true } },
@@ -91,7 +95,7 @@ export async function POST(req: Request) {
       await notifyUser({
         userId: body.assignedUserId,
         type: "SCHEDULE_UPDATE",
-        message: `You've been assigned ${body.date} ${body.startTime}–${body.endTime}`,
+        message: `${isOvertime ? "Overtime" : "Shift"} assigned ${body.date} ${body.startTime}–${body.endTime}`,
         relatedId: shift.id,
       });
     }

@@ -4,6 +4,7 @@ import { format, addDays, startOfWeek } from "date-fns";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "./AuthProvider";
 import { LeaveEarlyModal } from "./LeaveEarlyModal";
+import { OvertimeModal } from "./OvertimeModal";
 
 export type Shift = {
   id: string;
@@ -12,6 +13,7 @@ export type Shift = {
   endTime: string;
   status: "CONFIRMED" | "OPEN" | "NEEDS_COVERAGE";
   notes?: string | null;
+  isOvertime?: boolean;
   assignedUser?: { id: string; name: string; email: string } | null;
   coverageRequests?: { id: string; uncoveredStart: string; uncoveredEnd: string }[];
 };
@@ -37,6 +39,7 @@ export function ShiftCalendar() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [leaveShift, setLeaveShift] = useState<Shift | null>(null);
+  const [showOvertime, setShowOvertime] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [assigningId, setAssigningId] = useState<string | null>(null);
   const [composeDay, setComposeDay] = useState<string | null>(null);
@@ -141,28 +144,37 @@ export function ShiftCalendar() {
               : "Everyone sees the same board — no more word of mouth."}
           </p>
         </div>
-        <div className="flex items-center gap-2 rounded-2xl border border-line bg-white p-1 shadow-sm">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
-            className="rounded-xl px-3 py-2 text-sm font-semibold text-muted hover:bg-surface-soft hover:text-ink"
-            onClick={() => setWeekStart((d) => addDays(d, -7))}
+            onClick={() => setShowOvertime(true)}
+            className="rounded-xl border border-accent/40 bg-accent/10 px-3 py-2 text-sm font-bold text-accent"
           >
-            Prev
+            Log overtime
           </button>
-          <button
-            type="button"
-            className="rounded-xl bg-brand px-3 py-2 text-sm font-bold text-white"
-            onClick={() => setWeekStart(startOfWeek(new Date()))}
-          >
-            Today
-          </button>
-          <button
-            type="button"
-            className="rounded-xl px-3 py-2 text-sm font-semibold text-muted hover:bg-surface-soft hover:text-ink"
-            onClick={() => setWeekStart((d) => addDays(d, 7))}
-          >
-            Next
-          </button>
+          <div className="flex items-center gap-2 rounded-2xl border border-line bg-white p-1 shadow-sm">
+            <button
+              type="button"
+              className="rounded-xl px-3 py-2 text-sm font-semibold text-muted hover:bg-surface-soft hover:text-ink"
+              onClick={() => setWeekStart((d) => addDays(d, -7))}
+            >
+              Prev
+            </button>
+            <button
+              type="button"
+              className="rounded-xl bg-brand px-3 py-2 text-sm font-bold text-white"
+              onClick={() => setWeekStart(startOfWeek(new Date()))}
+            >
+              Today
+            </button>
+            <button
+              type="button"
+              className="rounded-xl px-3 py-2 text-sm font-semibold text-muted hover:bg-surface-soft hover:text-ink"
+              onClick={() => setWeekStart((d) => addDays(d, 7))}
+            >
+              Next
+            </button>
+          </div>
         </div>
       </div>
 
@@ -170,6 +182,7 @@ export function ShiftCalendar() {
         <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 border border-line"><i className="h-2.5 w-2.5 rounded-full bg-ok" /> Confirmed</span>
         <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 border border-line"><i className="h-2.5 w-2.5 rounded-full bg-warn" /> Needs coverage</span>
         <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 border border-line"><i className="h-2.5 w-2.5 rounded-full bg-danger" /> Open</span>
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 border border-line"><i className="h-2.5 w-2.5 rounded-full bg-accent" /> Overtime</span>
       </div>
 
       {error && (
@@ -277,12 +290,21 @@ export function ShiftCalendar() {
                     return (
                       <article
                         key={s.id}
-                        className={`rounded-xl border px-3 py-2 ${statusStyle[s.status]}`}
+                        className={`rounded-xl border px-3 py-2 ${
+                          s.isOvertime
+                            ? "border-accent/40 bg-accent/10 text-accent"
+                            : statusStyle[s.status]
+                        }`}
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0 flex-1">
                             <p className="text-sm font-bold text-ink">
                               {s.startTime} – {s.endTime}
+                              {s.isOvertime && (
+                                <span className="ml-2 rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+                                  OT
+                                </span>
+                              )}
                             </p>
                             {isManager ? (
                               <label className="mt-1 block text-xs font-semibold text-muted">
@@ -311,7 +333,7 @@ export function ShiftCalendar() {
                             {s.status.replace("_", " ")}
                           </span>
                         </div>
-                        {mine && s.status !== "NEEDS_COVERAGE" && (
+                        {mine && s.status !== "NEEDS_COVERAGE" && !s.isOvertime && (
                           <button
                             type="button"
                             onClick={() => setLeaveShift(s)}
@@ -319,6 +341,9 @@ export function ShiftCalendar() {
                           >
                             I need to leave early
                           </button>
+                        )}
+                        {s.isOvertime && s.notes && (
+                          <p className="mt-1 text-xs text-muted">{s.notes}</p>
                         )}
                       </article>
                     );
@@ -336,6 +361,16 @@ export function ShiftCalendar() {
           onClose={() => setLeaveShift(null)}
           onDone={() => {
             setLeaveShift(null);
+            load();
+          }}
+        />
+      )}
+
+      {showOvertime && (
+        <OvertimeModal
+          onClose={() => setShowOvertime(false)}
+          onDone={() => {
+            setShowOvertime(false);
             load();
           }}
         />

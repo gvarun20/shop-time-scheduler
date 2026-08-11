@@ -138,32 +138,47 @@ export async function validateShiftAssignment(opts: {
   startTime: string;
   endTime: string;
   excludeShiftId?: string;
+  /** Overtime may run past store open/close hours */
+  isOvertime?: boolean;
 }): Promise<{ ok: true } | { ok: false; error: string }> {
   const settings = await prisma.shopSettings.findUnique({ where: { id: "default" } });
   const hours = await prisma.storeHours.findUnique({
     where: { dayOfWeek: dayOfWeek(opts.date) },
   });
 
-  if (!hours || hours.isClosed) {
-    return { ok: false, error: "Shop is closed that day" };
-  }
-  if (
-    timeToMinutes(opts.startTime) < timeToMinutes(hours.openTime) ||
-    timeToMinutes(opts.endTime) > timeToMinutes(hours.closeTime)
-  ) {
-    return { ok: false, error: "Shift must fall within store hours" };
+  const mins = timeToMinutes(opts.endTime) - timeToMinutes(opts.startTime);
+  if (mins <= 0) {
+    return { ok: false, error: "End time must be after start time" };
   }
 
-  const mins = timeToMinutes(opts.endTime) - timeToMinutes(opts.startTime);
-  if (mins < (settings?.minShiftMinutes ?? 60)) {
-    return { ok: false, error: "Shift is shorter than minimum length" };
-  }
-  if (mins > (settings?.maxShiftMinutes ?? 480)) {
-    return { ok: false, error: "Shift exceeds maximum length" };
+  if (opts.isOvertime) {
+    // Overtime can go past closing; keep a short floor so tiny typos don't log seconds.
+    if (mins < 15) {
+      return { ok: false, error: "Overtime must be at least 15 minutes" };
+    }
+    if (mins > (settings?.maxShiftMinutes ?? 480)) {
+      return { ok: false, error: "Overtime exceeds maximum length" };
+    }
+  } else {
+    if (!hours || hours.isClosed) {
+      return { ok: false, error: "Shop is closed that day" };
+    }
+    if (
+      timeToMinutes(opts.startTime) < timeToMinutes(hours.openTime) ||
+      timeToMinutes(opts.endTime) > timeToMinutes(hours.closeTime)
+    ) {
+      return { ok: false, error: "Shift must fall within store hours (use overtime to log after close)" };
+    }
+    if (mins < (settings?.minShiftMinutes ?? 60)) {
+      return { ok: false, error: "Shift is shorter than minimum length" };
+    }
+    if (mins > (settings?.maxShiftMinutes ?? 480)) {
+      return { ok: false, error: "Shift exceeds maximum length" };
+    }
   }
 
   const day = startOfDay(opts.date);
-  const overlapping = await prisma.shift.findFirst({
+  const dayShifts = await prisma.shift.findMany({
     where: {
       assignedUserId: opts.userId,
       date: day,
@@ -171,8 +186,16 @@ export async function validateShiftAssignment(opts: {
     },
   });
 
-  if (overlapping && overlaps(opts.startTime, opts.endTime, overlapping.startTime, overlapping.endTime)) {
+  if (
+    dayShifts.some((s) =>
+      overlaps(opts.startTime, opts.endTime, s.startTime, s.endTime),
+    )
+  ) {
     return { ok: false, error: "Employee is already booked for overlapping shift" };
+  }
+
+  if (opts.isOvertime) {
+    return { ok: true };
   }
 
   const avail = await prisma.availability.findMany({
