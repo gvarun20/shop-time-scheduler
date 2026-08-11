@@ -9,7 +9,7 @@ const links = [
   { href: "/app", label: "Schedule" },
   { href: "/app/availability", label: "Availability" },
   { href: "/app/coverage", label: "Coverage" },
-  { href: "/app/admin", label: "Admin", adminOnly: true },
+  { href: "/app/admin", label: "Manager", adminOnly: true },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {

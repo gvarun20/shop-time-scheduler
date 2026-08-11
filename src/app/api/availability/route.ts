@@ -8,7 +8,27 @@ export async function GET(req: Request) {
   try {
     const user = await requireUser();
     const { searchParams } = new URL(req.url);
+    const all = searchParams.get("all") === "1";
     const userId = searchParams.get("userId") || user.id;
+
+    if (all) {
+      if (user.role !== "ADMIN") {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+      const employees = await prisma.user.findMany({
+        where: { role: "EMPLOYEE" },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          availabilities: {
+            orderBy: [{ dayOfWeek: "asc" }, { startTime: "asc" }],
+          },
+        },
+        orderBy: { name: "asc" },
+      });
+      return NextResponse.json({ team: employees });
+    }
 
     if (userId !== user.id && user.role !== "ADMIN") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
