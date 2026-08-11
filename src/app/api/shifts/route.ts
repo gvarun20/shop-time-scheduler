@@ -5,10 +5,16 @@ import { requireAdmin, requireUser, AuthError } from "@/lib/auth";
 import { parseDateKey, startOfDay } from "@/lib/time";
 import { validateShiftAssignment, isOutsideStoreHours } from "@/lib/coverage";
 import { notifyUser } from "@/lib/notify";
+import { sendDueShiftReminders } from "@/lib/reminders";
 
 export async function GET(req: Request) {
   try {
     await requireUser();
+    // Opportunistic 2h reminders while the app is open (Hobby cron is daily-only)
+    void sendDueShiftReminders().catch((err) =>
+      console.error("[reminders]", err),
+    );
+
     const { searchParams } = new URL(req.url);
     const from = searchParams.get("from");
     const to = searchParams.get("to");
