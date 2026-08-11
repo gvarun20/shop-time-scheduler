@@ -162,6 +162,27 @@ export default function AdminPage() {
     }
   };
 
+  const deleteEmployee = async (employee: User) => {
+    if (employee.role !== "EMPLOYEE") return;
+    const ok = window.confirm(
+      `Remove ${employee.name} from the team?\nTheir shifts will become unassigned.`,
+    );
+    if (!ok) return;
+    setError(null);
+    setMessage(null);
+    const res = await fetch(`/api/users/${employee.id}`, { method: "DELETE" });
+    const data = await res.json();
+    if (!res.ok) {
+      setError(data.error || "Could not delete employee");
+      return;
+    }
+    setMessage(`${employee.name} was removed.`);
+    if (assignedUserId === employee.id) setAssignedUserId("");
+    loadUsers();
+    loadTeamAvailability();
+    loadHours();
+  };
+
   if (user?.role !== "ADMIN") return null;
 
   const employees = users.filter((u) => u.role === "EMPLOYEE");
@@ -393,11 +414,22 @@ export default function AdminPage() {
         <h2 className="font-display text-lg">Team</h2>
         <ul className="mt-3 divide-y divide-line">
           {users.map((u) => (
-            <li key={u.id} className="flex justify-between py-2 text-sm">
-              <span className="font-medium">{u.name}</span>
-              <span className="text-muted">
-                {u.email} · {u.role}
-              </span>
+            <li key={u.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
+              <div className="min-w-0">
+                <p className="font-medium text-ink">{u.name}</p>
+                <p className="truncate text-muted">
+                  {u.email} · {u.role === "ADMIN" ? "Manager" : "Employee"}
+                </p>
+              </div>
+              {u.role === "EMPLOYEE" && (
+                <button
+                  type="button"
+                  onClick={() => deleteEmployee(u)}
+                  className="shrink-0 rounded-lg border border-danger/30 bg-danger/10 px-3 py-1.5 text-xs font-bold text-danger"
+                >
+                  Delete
+                </button>
+              )}
             </li>
           ))}
         </ul>
