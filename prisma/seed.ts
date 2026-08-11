@@ -39,7 +39,7 @@ async function main() {
     data: {
       name: "Manager",
       email: "manager@shop.local",
-      phone: "+31610000001",
+      phone: "+46722247856",
       pinHash: pin,
       role: "ADMIN",
       maxHoursPerWeek: 40,
