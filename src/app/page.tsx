@@ -7,7 +7,7 @@ import { AuthProvider, useAuth } from "@/components/AuthProvider";
 function LoginForm() {
   const { user, loading, login } = useAuth();
   const router = useRouter();
-  const [email, setEmail] = useState("maya@shop.local");
+  const [email, setEmail] = useState("manager@shop.local");
   const [pin, setPin] = useState("1234");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -74,7 +74,8 @@ function LoginForm() {
             </button>
           </form>
           <p className="mt-4 text-xs leading-relaxed text-muted">
-            Demo: admin@shop.local or maya@shop.local · PIN 1234
+            Demo PIN 1234 · manager@shop.local · employee1@shop.local ·
+            employee2@shop.local · employee3@shop.local
           </p>
         </div>
       </div>

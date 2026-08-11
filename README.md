@@ -34,11 +34,10 @@ Open [http://localhost:3000](http://localhost:3000)
 
 | Email | Role |
 |---|---|
-| `admin@shop.local` | Manager |
-| `maya@shop.local` | Employee |
-| `jordan@shop.local` | Employee |
-| `sam@shop.local` | Employee |
-| `riley@shop.local` | Employee |
+| `manager@shop.local` | Manager (admin) |
+| `employee1@shop.local` | Employee 1 |
+| `employee2@shop.local` | Employee 2 |
+| `employee3@shop.local` | Employee 3 |
 
 ## Live links
 

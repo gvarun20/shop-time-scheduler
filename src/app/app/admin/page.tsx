@@ -35,8 +35,12 @@ export default function AdminPage() {
     const res = await fetch("/api/users");
     const data = await res.json();
     if (res.ok) {
-      setUsers(data.users || []);
-      if (!assignedUserId && data.users?.[0]) setAssignedUserId(data.users[0].id);
+      const list = (data.users || []) as User[];
+      setUsers(list);
+      if (!assignedUserId) {
+        const firstEmployee = list.find((u) => u.role === "EMPLOYEE");
+        if (firstEmployee) setAssignedUserId(firstEmployee.id);
+      }
     }
   }, [assignedUserId]);
 
@@ -124,11 +128,13 @@ export default function AdminPage() {
               className="mt-1 w-full rounded-xl border border-line bg-bg px-3 py-2.5"
             >
               <option value="">Open / unassigned</option>
-              {users.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.name} ({u.role})
-                </option>
-              ))}
+              {users
+                .filter((u) => u.role === "EMPLOYEE")
+                .map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.name}
+                  </option>
+                ))}
             </select>
           </label>
           <label className="text-sm font-semibold">
