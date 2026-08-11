@@ -1,5 +1,5 @@
 import { prisma } from "./db";
-import { broadcastWhatsApp, sendWhatsAppToUserIds } from "./whatsapp";
+import { broadcastWhatsApp, sendWhatsAppToUserIds, type WhatsAppLink } from "./whatsapp";
 
 export type NotificationType =
   | "REMINDER"
@@ -12,10 +12,9 @@ export async function notifyUser(opts: {
   type: NotificationType;
   message: string;
   relatedId?: string;
-  /** Opt-in WhatsApp (default false to avoid spam on every schedule tweak) */
   whatsapp?: boolean;
-}) {
-  const row = await prisma.notification.create({
+}): Promise<{ notification: unknown; whatsappLinks: WhatsAppLink[] }> {
+  const notification = await prisma.notification.create({
     data: {
       userId: opts.userId,
       type: opts.type,
@@ -24,11 +23,15 @@ export async function notifyUser(opts: {
     },
   });
 
+  let whatsappLinks: WhatsAppLink[] = [];
   if (opts.whatsapp) {
-    await sendWhatsAppToUserIds([opts.userId], `Ngroceries: ${opts.message}`);
+    whatsappLinks = await sendWhatsAppToUserIds(
+      [opts.userId],
+      `Ngroceries: ${opts.message}`,
+    );
   }
 
-  return row;
+  return { notification, whatsappLinks };
 }
 
 export async function notifyMany(
@@ -39,8 +42,8 @@ export async function notifyMany(
     relatedId?: string;
     whatsapp?: boolean;
   },
-) {
-  if (userIds.length === 0) return;
+): Promise<{ whatsappLinks: WhatsAppLink[] }> {
+  if (userIds.length === 0) return { whatsappLinks: [] };
   await prisma.notification.createMany({
     data: userIds.map((userId) => ({
       userId,
@@ -50,9 +53,12 @@ export async function notifyMany(
     })),
   });
 
-  if (opts.whatsapp) {
-    await sendWhatsAppToUserIds(userIds, `Ngroceries: ${opts.message}`);
-  }
+  if (!opts.whatsapp) return { whatsappLinks: [] };
+  const whatsappLinks = await sendWhatsAppToUserIds(
+    userIds,
+    `Ngroceries: ${opts.message}`,
+  );
+  return { whatsappLinks };
 }
 
 export async function escalateToAdmins(message: string, relatedId?: string) {
@@ -60,19 +66,19 @@ export async function escalateToAdmins(message: string, relatedId?: string) {
     where: { role: "ADMIN" },
     select: { id: true },
   });
-  await notifyMany(
+  return notifyMany(
     admins.map((a) => a.id),
     { type: "ESCALATION", message, relatedId, whatsapp: true },
   );
 }
 
-/** In-app + WhatsApp to every staff member (employees + managers). */
+/** In-app + free WhatsApp links for every staff member (employees + managers). */
 export async function notifyEntireTeam(opts: {
   type: NotificationType;
   message: string;
   relatedId?: string;
   excludeUserId?: string;
-}) {
+}): Promise<{ whatsappLinks: WhatsAppLink[] }> {
   const users = await prisma.user.findMany({
     where: opts.excludeUserId ? { id: { not: opts.excludeUserId } } : undefined,
     select: { id: true },
@@ -82,10 +88,11 @@ export async function notifyEntireTeam(opts: {
     type: opts.type,
     message: opts.message,
     relatedId: opts.relatedId,
-    whatsapp: false, // send once via broadcast below
+    whatsapp: false,
   });
-  await broadcastWhatsApp({
+  const whatsappLinks = await broadcastWhatsApp({
     body: `Ngroceries: ${opts.message}`,
     excludeUserId: opts.excludeUserId,
   });
+  return { whatsappLinks };
 }

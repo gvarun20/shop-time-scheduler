@@ -91,7 +91,7 @@ export async function POST(
     const dateLabel = formatDateKey(result.shiftDate);
     const teamMessage = `${user.name} accepted coverage for ${result.requestedByName} on ${dateLabel} (${result.uncoveredStart}–${result.uncoveredEnd}). Schedule updated.`;
 
-    await notifyEntireTeam({
+    const { whatsappLinks } = await notifyEntireTeam({
       type: "SCHEDULE_UPDATE",
       message: teamMessage,
       relatedId: result.coverage.id,
@@ -108,7 +108,7 @@ export async function POST(
     return NextResponse.json({
       coverage: result.coverage,
       coverShift: result.coverShift,
-      whatsappBroadcast: true,
+      whatsappLinks,
     });
   } catch (e) {
     if (e instanceof AuthError) {

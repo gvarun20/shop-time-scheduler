@@ -138,9 +138,10 @@ model WhatsAppMessage {
   toPhone   String
   toUserId  String?
   body      String
-  status    String   @default("queued") // queued | sent | failed | skipped
+  link      String?
+  status    String   @default("ready") // ready | opened | skipped
   error     String?
-  provider  String   @default("twilio")
+  provider  String   @default("wa.me")
   createdAt DateTime @default(now())
 
   @@index([createdAt])

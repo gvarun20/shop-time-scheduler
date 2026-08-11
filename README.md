@@ -11,7 +11,7 @@ Built from `shop-scheduler-cursor-prompt.md`.
 - Employee availability profiles
 - Admin shift assignment + staff management
 - **Leave early** flow: 2 taps → WhatsApp + in-app broadcast to all staff → first accept wins
-- WhatsApp alerts (Twilio): 2h shift reminders, coverage needed, coverage accepted
+- WhatsApp alerts (**free wa.me links**): 2h reminders, coverage needed, coverage accepted
 - Auto-escalation to managers when nobody is available / request expires
 - In-app notification bell (PWA-ready manifest)
 
@@ -45,19 +45,17 @@ Open [http://localhost:3000](http://localhost:3000)
 - **GitHub**: [github.com/gvarun20/shop-time-scheduler](https://github.com/gvarun20/shop-time-scheduler)
 - **Vercel**: [shop-time-scheduler.vercel.app](https://shop-time-scheduler.vercel.app)
 
-> Production needs `DATABASE_URL`, `AUTH_SECRET`, and for live WhatsApp: `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_WHATSAPP_FROM`. Optional: `CRON_SECRET`, `SHOP_UTC_OFFSET`.
+> Production needs free Vercel + free Postgres (`DATABASE_URL`) + `AUTH_SECRET`. Optional: `CRON_SECRET`, `SHOP_UTC_OFFSET`.
 
-### WhatsApp setup (Twilio)
+### WhatsApp (100% free)
 
-1. Create a Twilio account and enable WhatsApp (sandbox is fine for testing).
-2. In Vercel → Project → Settings → Environment Variables, add:
-   - `TWILIO_ACCOUNT_SID`
-   - `TWILIO_AUTH_TOKEN`
-   - `TWILIO_WHATSAPP_FROM` (e.g. `whatsapp:+14155238886`)
-3. Put real WhatsApp numbers on each user (E.164 like `+31612345678`) in Manager → Add employee / Team.
-4. Cron runs every 15 minutes at `/api/cron/reminders` and texts staff ~2 hours before their shift.
+No Twilio. No paid SMS API.
 
-Until Twilio is configured, messages are logged as dry-run on the Manager → WhatsApp alerts panel.
+The app builds `wa.me` links with the message pre-filled. Anyone taps **Open WA** on their phone → WhatsApp opens → they press Send. That uses normal personal WhatsApp (free).
+
+- Leave early / coverage accept → shows Open WA buttons for each teammate
+- Manager → WhatsApp alerts log → Open WA for reminders too
+- Put numbers on each person (e.g. Employee 1 `+46737540940`) via Manager → Edit
 
 CI workflow template lives at `docs/github-ci.yml` (move to `.github/workflows/ci.yml` after granting the GitHub `workflow` OAuth scope).
 

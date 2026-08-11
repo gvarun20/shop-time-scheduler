@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { WhatsAppLinkList, type WaLink } from "@/components/WhatsAppLinkList";
 
 type CoverageReq = {
   id: string;
@@ -16,6 +17,7 @@ type CoverageReq = {
 export default function CoveragePage() {
   const [requests, setRequests] = useState<CoverageReq[]>([]);
   const [message, setMessage] = useState<string | null>(null);
+  const [waLinks, setWaLinks] = useState<WaLink[]>([]);
 
   const load = useCallback(async () => {
     const res = await fetch("/api/coverage");
@@ -31,10 +33,14 @@ export default function CoveragePage() {
 
   const accept = async (id: string) => {
     setMessage(null);
+    setWaLinks([]);
     const res = await fetch(`/api/coverage/${id}/accept`, { method: "POST" });
     const data = await res.json();
     if (!res.ok) setMessage(data.error || "Could not accept");
-    else setMessage("You got it — you're on the cover block.");
+    else {
+      setMessage("You got it — you're on the cover block. Notify everyone on WhatsApp below.");
+      setWaLinks(data.whatsappLinks || []);
+    }
     load();
   };
 
@@ -47,13 +53,16 @@ export default function CoveragePage() {
     <div className="space-y-4">
       <div>
         <h1 className="font-display text-2xl">Open coverage</h1>
-        <p className="text-sm text-muted">First accept wins. Alerts go out to everyone eligible at once.</p>
+        <p className="text-sm text-muted">
+          First accept wins. Then tap free WhatsApp links to tell the whole team.
+        </p>
       </div>
       {message && (
         <p className="rounded-xl border border-brand/20 bg-brand/10 px-3 py-2 text-sm text-brand-deep">
           {message}
         </p>
       )}
+      <WhatsAppLinkList links={waLinks} title="Tell everyone on WhatsApp (free)" />
       <div className="space-y-3">
         {requests.length === 0 && (
           <p className="rounded-2xl border border-dashed border-line bg-white/60 px-4 py-10 text-center text-sm text-muted">

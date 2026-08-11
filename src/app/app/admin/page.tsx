@@ -67,9 +67,16 @@ export default function AdminPage() {
     totalHours: 0,
     shiftCount: 0,
   });
-  const [waConfigured, setWaConfigured] = useState(false);
   const [waMessages, setWaMessages] = useState<
-    { id: string; toPhone: string; body: string; status: string; error: string | null; createdAt: string }[]
+    {
+      id: string;
+      toPhone: string;
+      body: string;
+      link: string | null;
+      status: string;
+      error: string | null;
+      createdAt: string;
+    }[]
   >([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editPhone, setEditPhone] = useState("");
@@ -118,7 +125,6 @@ export default function AdminPage() {
     const res = await fetch("/api/whatsapp");
     const data = await res.json();
     if (res.ok) {
-      setWaConfigured(Boolean(data.configured));
       setWaMessages(data.messages || []);
     }
   }, []);
@@ -246,14 +252,11 @@ export default function AdminPage() {
       setError(data.error || "Test send failed");
       return;
     }
-    if (data.ok) {
-      setMessage(`WhatsApp test sent to ${u.name} (${u.phone}).`);
-    } else if (!data.configured) {
-      setError(
-        "Twilio is not configured yet — message was logged only. Add TWILIO_* env vars on Vercel to send for real.",
-      );
+    if (data.ok || data.message?.status === "ready") {
+      setMessage(`WhatsApp ready for ${u.name} (${u.phone}). Tap Open WA in the log below.`);
+      if (data.message?.link) window.open(data.message.link, "_blank", "noopener,noreferrer");
     } else {
-      setError(data.message?.error || "WhatsApp send failed — check the log below.");
+      setError(data.message?.error || data.error || "Could not prepare WhatsApp link.");
     }
     loadWhatsApp();
   };
@@ -450,26 +453,15 @@ export default function AdminPage() {
       <section className="space-y-3 rounded-2xl border border-line bg-white p-4 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h2 className="font-display text-lg">WhatsApp alerts</h2>
+            <h2 className="font-display text-lg">WhatsApp alerts (free)</h2>
             <p className="text-sm text-muted">
-              2h shift reminders, leave-early broadcasts, and coverage accept notices.
+              Uses free wa.me links — no Twilio, no paid API. Tap Open WA to send from your phone.
             </p>
           </div>
-          <span
-            className={`rounded-full px-3 py-1 text-xs font-bold ${
-              waConfigured
-                ? "bg-ok/15 text-ok"
-                : "bg-warn/15 text-warn"
-            }`}
-          >
-            {waConfigured ? "Twilio connected" : "Not configured (dry-run log)"}
+          <span className="rounded-full bg-ok/15 px-3 py-1 text-xs font-bold text-ok">
+            Free · always on
           </span>
         </div>
-        {!waConfigured && (
-          <p className="rounded-xl border border-warn/30 bg-warn/10 px-3 py-2 text-xs text-warn">
-            Set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_WHATSAPP_FROM in Vercel env to send real WhatsApp messages.
-          </p>
-        )}
         <ul className="max-h-64 space-y-2 overflow-y-auto">
           {waMessages.length === 0 && (
             <li className="py-6 text-center text-sm text-muted">No WhatsApp messages yet</li>
@@ -478,9 +470,21 @@ export default function AdminPage() {
             <li key={m.id} className="rounded-xl border border-line bg-bg px-3 py-2 text-sm">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="font-semibold text-ink">{m.toPhone}</span>
-                <span className="text-[10px] font-bold uppercase tracking-wide text-muted">
-                  {m.status}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wide text-muted">
+                    {m.status}
+                  </span>
+                  {m.link && (
+                    <a
+                      href={m.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="rounded-lg bg-brand px-2 py-1 text-[11px] font-bold text-white"
+                    >
+                      Open WA
+                    </a>
+                  )}
+                </div>
               </div>
               <p className="mt-1 text-muted">{m.body}</p>
               {m.error && <p className="mt-1 text-xs text-danger">{m.error}</p>}

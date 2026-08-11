@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireAdmin, AuthError } from "@/lib/auth";
-import { sendWhatsApp, whatsappConfigured } from "@/lib/whatsapp";
+import { sendWhatsApp } from "@/lib/whatsapp";
 
 const schema = z.object({
   userId: z.string().optional(),
@@ -10,7 +10,7 @@ const schema = z.object({
   message: z.string().min(1).max(500).optional(),
 });
 
-/** Manager: send a one-off WhatsApp test to a user or raw phone. */
+/** Manager: prepare a free wa.me test link for a user/phone. */
 export async function POST(req: Request) {
   try {
     await requireAdmin();
@@ -39,17 +39,19 @@ export async function POST(req: Request) {
 
     const text =
       body.message ||
-      `Ngroceries test: Hi ${name}, WhatsApp alerts are working.`;
+      `Ngroceries test: Hi ${name}, WhatsApp alerts are working (free wa.me link).`;
 
     const result = await sendWhatsApp({
       toPhone: phone,
       toUserId: userId,
+      toName: name,
       body: text,
     });
 
     return NextResponse.json({
-      ok: result.status === "sent",
-      configured: whatsappConfigured(),
+      ok: result.status === "ready",
+      configured: true,
+      free: true,
       message: result,
     });
   } catch (e) {
@@ -60,6 +62,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid input" }, { status: 400 });
     }
     console.error(e);
-    return NextResponse.json({ error: "Failed to send test" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to prepare WhatsApp link" }, { status: 500 });
   }
 }

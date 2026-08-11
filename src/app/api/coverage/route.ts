@@ -130,8 +130,8 @@ export async function POST(req: Request) {
     const dateLabel = formatDateKey(shift.date);
     const teamMessage = `${user.name} needs to leave early and needs coverage on ${dateLabel} from ${body.leaveAt} to ${shift.endTime}. Open the app → Coverage to accept.`;
 
-    // WhatsApp + in-app to ALL employees and managers
-    await notifyEntireTeam({
+    // In-app to ALL + free WhatsApp links for everyone with a number
+    const { whatsappLinks } = await notifyEntireTeam({
       type: "COVERAGE_ALERT",
       message: teamMessage,
       relatedId: coverage.id,
@@ -158,7 +158,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       coverage,
       candidates: candidates.map((c) => ({ id: c.id, name: c.name })),
-      whatsappBroadcast: true,
+      whatsappLinks,
     });
   } catch (e) {
     if (e instanceof AuthError) {
