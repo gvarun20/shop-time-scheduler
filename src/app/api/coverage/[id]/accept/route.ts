@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireUser, AuthError } from "@/lib/auth";
 import { findCoverageCandidates } from "@/lib/coverage";
-import { notifyUser } from "@/lib/notify";
-import { startOfDay } from "@/lib/time";
+import { notifyEntireTeam, notifyUser } from "@/lib/notify";
+import { formatDateKey, startOfDay } from "@/lib/time";
 
 /** First to accept wins — claim an open coverage request. */
 export async function POST(
@@ -17,7 +17,10 @@ export async function POST(
     const result = await prisma.$transaction(async (tx) => {
       const coverage = await tx.coverageRequest.findUnique({
         where: { id },
-        include: { originalShift: true },
+        include: {
+          originalShift: true,
+          requestedBy: { select: { id: true, name: true } },
+        },
       });
       if (!coverage || coverage.status !== "OPEN") {
         throw new Error("Coverage no longer available");
@@ -46,7 +49,6 @@ export async function POST(
 
       const original = coverage.originalShift;
 
-      // Shorten original shift to leaveAt
       await tx.shift.update({
         where: { id: original.id },
         data: {
@@ -55,7 +57,6 @@ export async function POST(
         },
       });
 
-      // Create cover block for acceptor
       const coverShift = await tx.shift.create({
         data: {
           date: startOfDay(original.date),
@@ -77,7 +78,23 @@ export async function POST(
         },
       });
 
-      return { coverage: updated, coverShift };
+      return {
+        coverage: updated,
+        coverShift,
+        requestedByName: coverage.requestedBy.name,
+        uncoveredStart: coverage.uncoveredStart,
+        uncoveredEnd: coverage.uncoveredEnd,
+        shiftDate: original.date,
+      };
+    });
+
+    const dateLabel = formatDateKey(result.shiftDate);
+    const teamMessage = `${user.name} accepted coverage for ${result.requestedByName} on ${dateLabel} (${result.uncoveredStart}–${result.uncoveredEnd}). Schedule updated.`;
+
+    await notifyEntireTeam({
+      type: "SCHEDULE_UPDATE",
+      message: teamMessage,
+      relatedId: result.coverage.id,
     });
 
     await notifyUser({
@@ -85,9 +102,14 @@ export async function POST(
       type: "SCHEDULE_UPDATE",
       message: `${user.name} accepted your coverage request.`,
       relatedId: result.coverage.id,
+      whatsapp: false,
     });
 
-    return NextResponse.json(result);
+    return NextResponse.json({
+      coverage: result.coverage,
+      coverShift: result.coverShift,
+      whatsappBroadcast: true,
+    });
   } catch (e) {
     if (e instanceof AuthError) {
       return NextResponse.json({ error: e.message }, { status: e.status });

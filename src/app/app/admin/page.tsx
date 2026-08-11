@@ -9,6 +9,7 @@ type User = {
   id: string;
   name: string;
   email: string;
+  phone?: string | null;
   role: string;
 };
 
@@ -54,6 +55,7 @@ export default function AdminPage() {
 
   const [newName, setNewName] = useState("");
   const [newEmail, setNewEmail] = useState("");
+  const [newPhone, setNewPhone] = useState("");
   const [newPin, setNewPin] = useState("1234");
 
   const [team, setTeam] = useState<TeamMember[]>([]);
@@ -65,6 +67,10 @@ export default function AdminPage() {
     totalHours: 0,
     shiftCount: 0,
   });
+  const [waConfigured, setWaConfigured] = useState(false);
+  const [waMessages, setWaMessages] = useState<
+    { id: string; toPhone: string; body: string; status: string; error: string | null; createdAt: string }[]
+  >([]);
 
   useEffect(() => {
     if (user && user.role !== "ADMIN") router.replace("/app");
@@ -105,10 +111,20 @@ export default function AdminPage() {
     }
   }, [month]);
 
+  const loadWhatsApp = useCallback(async () => {
+    const res = await fetch("/api/whatsapp");
+    const data = await res.json();
+    if (res.ok) {
+      setWaConfigured(Boolean(data.configured));
+      setWaMessages(data.messages || []);
+    }
+  }, []);
+
   useEffect(() => {
     loadUsers();
     loadTeamAvailability();
-  }, [loadUsers, loadTeamAvailability]);
+    loadWhatsApp();
+  }, [loadUsers, loadTeamAvailability, loadWhatsApp]);
 
   useEffect(() => {
     loadHours();
@@ -146,6 +162,7 @@ export default function AdminPage() {
       body: JSON.stringify({
         name: newName,
         email: newEmail,
+        phone: newPhone || undefined,
         pin: newPin,
         role: "EMPLOYEE",
       }),
@@ -156,6 +173,7 @@ export default function AdminPage() {
       setMessage(`Added ${data.user.name}`);
       setNewName("");
       setNewEmail("");
+      setNewPhone("");
       loadUsers();
       loadTeamAvailability();
       loadHours();
@@ -372,15 +390,66 @@ export default function AdminPage() {
         </button>
       </form>
 
+      <section className="space-y-3 rounded-2xl border border-line bg-white p-4 shadow-sm">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="font-display text-lg">WhatsApp alerts</h2>
+            <p className="text-sm text-muted">
+              2h shift reminders, leave-early broadcasts, and coverage accept notices.
+            </p>
+          </div>
+          <span
+            className={`rounded-full px-3 py-1 text-xs font-bold ${
+              waConfigured
+                ? "bg-ok/15 text-ok"
+                : "bg-warn/15 text-warn"
+            }`}
+          >
+            {waConfigured ? "Twilio connected" : "Not configured (dry-run log)"}
+          </span>
+        </div>
+        {!waConfigured && (
+          <p className="rounded-xl border border-warn/30 bg-warn/10 px-3 py-2 text-xs text-warn">
+            Set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_WHATSAPP_FROM in Vercel env to send real WhatsApp messages.
+          </p>
+        )}
+        <ul className="max-h-64 space-y-2 overflow-y-auto">
+          {waMessages.length === 0 && (
+            <li className="py-6 text-center text-sm text-muted">No WhatsApp messages yet</li>
+          )}
+          {waMessages.map((m) => (
+            <li key={m.id} className="rounded-xl border border-line bg-bg px-3 py-2 text-sm">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="font-semibold text-ink">{m.toPhone}</span>
+                <span className="text-[10px] font-bold uppercase tracking-wide text-muted">
+                  {m.status}
+                </span>
+              </div>
+              <p className="mt-1 text-muted">{m.body}</p>
+              {m.error && <p className="mt-1 text-xs text-danger">{m.error}</p>}
+            </li>
+          ))}
+        </ul>
+      </section>
+
       <form onSubmit={addEmployee} className="space-y-3 rounded-2xl border border-line bg-white p-4">
         <h2 className="font-display text-lg">Add employee</h2>
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2">
           <label className="text-sm font-semibold">
             Name
             <input
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               required
+              className="mt-1 w-full rounded-xl border border-line bg-bg px-3 py-2.5"
+            />
+          </label>
+          <label className="text-sm font-semibold">
+            WhatsApp number
+            <input
+              value={newPhone}
+              onChange={(e) => setNewPhone(e.target.value)}
+              placeholder="+31612345678"
               className="mt-1 w-full rounded-xl border border-line bg-bg px-3 py-2.5"
             />
           </label>
@@ -418,7 +487,9 @@ export default function AdminPage() {
               <div className="min-w-0">
                 <p className="font-medium text-ink">{u.name}</p>
                 <p className="truncate text-muted">
-                  {u.email} · {u.role === "ADMIN" ? "Manager" : "Employee"}
+                  {u.email}
+                  {u.phone ? ` · WhatsApp ${u.phone}` : " · no WhatsApp"}
+                  {` · ${u.role === "ADMIN" ? "Manager" : "Employee"}`}
                 </p>
               </div>
               {u.role === "EMPLOYEE" && (

@@ -39,7 +39,7 @@ async function main() {
     data: {
       name: "Manager",
       email: "manager@shop.local",
-      phone: "+15550001",
+      phone: "+31610000001",
       pinHash: pin,
       role: "ADMIN",
       maxHoursPerWeek: 40,
@@ -51,7 +51,7 @@ async function main() {
       data: {
         name: "Employee 1",
         email: "employee1@shop.local",
-        phone: "+15550002",
+        phone: "+31610000002",
         pinHash: pin,
         role: "EMPLOYEE",
         maxHoursPerWeek: 20,
@@ -61,7 +61,7 @@ async function main() {
       data: {
         name: "Employee 2",
         email: "employee2@shop.local",
-        phone: "+15550003",
+        phone: "+31610000003",
         pinHash: pin,
         role: "EMPLOYEE",
         maxHoursPerWeek: 20,
@@ -71,7 +71,7 @@ async function main() {
       data: {
         name: "Employee 3",
         email: "employee3@shop.local",
-        phone: "+15550004",
+        phone: "+31610000004",
         pinHash: pin,
         role: "EMPLOYEE",
         maxHoursPerWeek: 20,

@@ -64,17 +64,18 @@ model ShopSettings {
 }
 
 model Shift {
-  id             String   @id @default(cuid())
+  id             String    @id @default(cuid())
   date           DateTime
   startTime      String
   endTime        String
   assignedUserId String?
-  status         String   @default("OPEN") // CONFIRMED | OPEN | NEEDS_COVERAGE
+  status         String    @default("OPEN") // CONFIRMED | OPEN | NEEDS_COVERAGE
   notes          String?
-  isOvertime     Boolean  @default(false)
+  isOvertime     Boolean   @default(false)
+  reminderSentAt DateTime?
   parentShiftId  String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   assignedUser     User?             @relation("AssignedShifts", fields: [assignedUserId], references: [id])
   parentShift      Shift?            @relation("ShiftSplits", fields: [parentShiftId], references: [id])
@@ -130,4 +131,17 @@ model Notification {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, read])
+}
+
+model WhatsAppMessage {
+  id        String   @id @default(cuid())
+  toPhone   String
+  toUserId  String?
+  body      String
+  status    String   @default("queued") // queued | sent | failed | skipped
+  error     String?
+  provider  String   @default("twilio")
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
 }

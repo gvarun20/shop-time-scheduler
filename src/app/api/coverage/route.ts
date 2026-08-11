@@ -3,8 +3,8 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireUser, AuthError } from "@/lib/auth";
 import { findCoverageCandidates } from "@/lib/coverage";
-import { escalateToAdmins, notifyMany } from "@/lib/notify";
-import { timeToMinutes } from "@/lib/time";
+import { escalateToAdmins, notifyEntireTeam, notifyMany } from "@/lib/notify";
+import { formatDateKey, timeToMinutes } from "@/lib/time";
 
 const createSchema = z.object({
   shiftId: z.string(),
@@ -127,16 +127,28 @@ export async function POST(req: Request) {
       coverageRequestId: coverage.id,
     });
 
-    await notifyMany(
-      candidates.map((c) => c.id),
-      {
-        type: "COVERAGE_ALERT",
-        message: `${user.name} needs cover ${body.leaveAt}–${shift.endTime}. First to accept wins.`,
-        relatedId: coverage.id,
-      },
-    );
+    const dateLabel = formatDateKey(shift.date);
+    const teamMessage = `${user.name} needs to leave early and needs coverage on ${dateLabel} from ${body.leaveAt} to ${shift.endTime}. Open the app → Coverage to accept.`;
 
-    if (candidates.length === 0) {
+    // WhatsApp + in-app to ALL employees and managers
+    await notifyEntireTeam({
+      type: "COVERAGE_ALERT",
+      message: teamMessage,
+      relatedId: coverage.id,
+    });
+
+    // Extra in-app ping for matched candidates (they already got team message)
+    if (candidates.length > 0) {
+      await notifyMany(
+        candidates.map((c) => c.id),
+        {
+          type: "COVERAGE_ALERT",
+          message: `You are a match for ${user.name}'s cover ${body.leaveAt}–${shift.endTime}. First to accept wins.`,
+          relatedId: coverage.id,
+          whatsapp: false,
+        },
+      );
+    } else {
       await escalateToAdmins(
         `No available candidates for ${user.name}'s coverage (${body.leaveAt}–${shift.endTime}).`,
         coverage.id,
@@ -146,6 +158,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       coverage,
       candidates: candidates.map((c) => ({ id: c.id, name: c.name })),
+      whatsappBroadcast: true,
     });
   } catch (e) {
     if (e instanceof AuthError) {
