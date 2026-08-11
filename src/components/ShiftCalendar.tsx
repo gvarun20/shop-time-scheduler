@@ -46,6 +46,7 @@ export function ShiftCalendar() {
   const [newStart, setNewStart] = useState("09:00");
   const [newEnd, setNewEnd] = useState("14:00");
   const [newEmployeeId, setNewEmployeeId] = useState("");
+  const [newIsOvertime, setNewIsOvertime] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const from = format(weekStart, "yyyy-MM-dd");
@@ -120,6 +121,7 @@ export function ShiftCalendar() {
         startTime: newStart,
         endTime: newEnd,
         assignedUserId: newEmployeeId || null,
+        isOvertime: newIsOvertime,
       }),
     });
     const data = await res.json();
@@ -129,6 +131,7 @@ export function ShiftCalendar() {
       return;
     }
     setComposeDay(null);
+    setNewIsOvertime(false);
     await load();
   };
 
@@ -242,6 +245,18 @@ export function ShiftCalendar() {
               />
             </label>
           </div>
+          <label className="flex items-center gap-2 text-sm font-semibold">
+            <input
+              type="checkbox"
+              checked={newIsOvertime}
+              onChange={(e) => setNewIsOvertime(e.target.checked)}
+              className="h-4 w-4 rounded border-line"
+            />
+            Overtime after shop closing
+          </label>
+          <p className="text-xs text-muted">
+            Tip: if the end time is after close, it is saved as overtime automatically.
+          </p>
           <button
             type="submit"
             disabled={saving || !newEmployeeId}

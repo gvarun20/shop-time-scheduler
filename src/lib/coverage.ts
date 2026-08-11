@@ -1,4 +1,3 @@
-import { prisma } from "./db";
 import {
   dayOfWeek,
   durationHours,
@@ -6,6 +5,22 @@ import {
   startOfDay,
   timeToMinutes,
 } from "./time";
+import { prisma } from "./db";
+
+export async function isOutsideStoreHours(opts: {
+  date: Date;
+  startTime: string;
+  endTime: string;
+}): Promise<boolean> {
+  const hours = await prisma.storeHours.findUnique({
+    where: { dayOfWeek: dayOfWeek(opts.date) },
+  });
+  if (!hours || hours.isClosed) return true;
+  return (
+    timeToMinutes(opts.startTime) < timeToMinutes(hours.openTime) ||
+    timeToMinutes(opts.endTime) > timeToMinutes(hours.closeTime)
+  );
+}
 
 export type Candidate = {
   id: string;

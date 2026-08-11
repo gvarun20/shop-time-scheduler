@@ -38,6 +38,7 @@ export async function PATCH(
         startTime,
         endTime,
         excludeShiftId: id,
+        isOvertime: existing.isOvertime,
       });
       if (!check.ok && !check.error.startsWith("Warning")) {
         return NextResponse.json({ error: check.error }, { status: 400 });

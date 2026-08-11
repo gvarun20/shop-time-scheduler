@@ -3,7 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireAdmin, requireUser, AuthError } from "@/lib/auth";
 import { parseDateKey, startOfDay } from "@/lib/time";
-import { validateShiftAssignment } from "@/lib/coverage";
+import { validateShiftAssignment, isOutsideStoreHours } from "@/lib/coverage";
 import { notifyUser } from "@/lib/notify";
 
 export async function GET(req: Request) {
@@ -60,7 +60,13 @@ export async function POST(req: Request) {
     await requireAdmin();
     const body = createSchema.parse(await req.json());
     const date = startOfDay(parseDateKey(body.date));
-    const isOvertime = Boolean(body.isOvertime);
+    // After-hours assignments are overtime even if the checkbox was missed
+    const outsideHours = await isOutsideStoreHours({
+      date,
+      startTime: body.startTime,
+      endTime: body.endTime,
+    });
+    const isOvertime = Boolean(body.isOvertime) || outsideHours;
 
     if (body.assignedUserId) {
       const check = await validateShiftAssignment({
@@ -83,7 +89,11 @@ export async function POST(req: Request) {
         endTime: body.endTime,
         assignedUserId: body.assignedUserId || null,
         status: body.assignedUserId ? "CONFIRMED" : "OPEN",
-        notes: body.notes,
+        notes: body.notes?.trim()
+          ? body.notes.trim()
+          : isOvertime
+            ? "Overtime (after shop hours)"
+            : undefined,
         isOvertime,
       },
       include: {
