@@ -1,11 +1,11 @@
 {
-  "name": "Corner Shop Shifts",
-  "short_name": "ShopShifts",
-  "description": "Shift schedule and coverage alerts",
+  "name": "Ngroceries Shifts",
+  "short_name": "Ngroceries",
+  "description": "Shift schedule and coverage alerts for Ngroceries",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#eef3f1",
-  "theme_color": "#0f6b5c",
+  "background_color": "#f2f6f3",
+  "theme_color": "#1b7a4c",
   "icons": [
     {
       "src": "/icon.svg",

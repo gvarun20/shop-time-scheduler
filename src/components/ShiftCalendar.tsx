@@ -130,34 +130,35 @@ export function ShiftCalendar() {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-display text-2xl text-ink">Week schedule</h1>
-          <p className="text-sm text-muted">
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand">Ngroceries</p>
+          <h1 className="font-display text-3xl text-ink">Week schedule</h1>
+          <p className="mt-1 text-sm text-muted">
             {isManager
               ? "Pick a day, choose an employee from the dropdown, and assign the shift."
               : "Everyone sees the same board — no more word of mouth."}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 rounded-2xl border border-line bg-white p-1 shadow-sm">
           <button
             type="button"
-            className="rounded-lg border border-line bg-white px-3 py-2 text-sm"
+            className="rounded-xl px-3 py-2 text-sm font-semibold text-muted hover:bg-surface-soft hover:text-ink"
             onClick={() => setWeekStart((d) => addDays(d, -7))}
           >
             Prev
           </button>
           <button
             type="button"
-            className="rounded-lg border border-line bg-white px-3 py-2 text-sm"
+            className="rounded-xl bg-brand px-3 py-2 text-sm font-bold text-white"
             onClick={() => setWeekStart(startOfWeek(new Date()))}
           >
             Today
           </button>
           <button
             type="button"
-            className="rounded-lg border border-line bg-white px-3 py-2 text-sm"
+            className="rounded-xl px-3 py-2 text-sm font-semibold text-muted hover:bg-surface-soft hover:text-ink"
             onClick={() => setWeekStart((d) => addDays(d, 7))}
           >
             Next
@@ -166,9 +167,9 @@ export function ShiftCalendar() {
       </div>
 
       <div className="flex flex-wrap gap-3 text-xs font-semibold uppercase tracking-wide text-muted">
-        <span className="inline-flex items-center gap-1.5"><i className="h-2.5 w-2.5 rounded-full bg-ok" /> Confirmed</span>
-        <span className="inline-flex items-center gap-1.5"><i className="h-2.5 w-2.5 rounded-full bg-warn" /> Needs coverage</span>
-        <span className="inline-flex items-center gap-1.5"><i className="h-2.5 w-2.5 rounded-full bg-danger" /> Open</span>
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 border border-line"><i className="h-2.5 w-2.5 rounded-full bg-ok" /> Confirmed</span>
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 border border-line"><i className="h-2.5 w-2.5 rounded-full bg-warn" /> Needs coverage</span>
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 border border-line"><i className="h-2.5 w-2.5 rounded-full bg-danger" /> Open</span>
       </div>
 
       {error && (
@@ -250,18 +251,18 @@ export function ShiftCalendar() {
             return (
               <section
                 key={key}
-                className="rounded-2xl border border-line bg-bg-elevated/90 p-3 shadow-sm"
+                className="rounded-2xl border border-line bg-white p-3.5 shadow-sm"
               >
-                <header className="mb-3 flex items-center justify-between gap-2">
+                <header className="mb-3 flex items-center justify-between gap-2 border-b border-line/80 pb-2">
                   <div className="flex items-baseline gap-2">
                     <h2 className="font-display text-lg">{format(day, "EEE")}</h2>
-                    <span className="text-xs text-muted">{format(day, "MMM d")}</span>
+                    <span className="text-xs font-medium text-muted">{format(day, "MMM d")}</span>
                   </div>
                   {isManager && (
                     <button
                       type="button"
                       onClick={() => setComposeDay(key)}
-                      className="rounded-lg bg-brand px-2.5 py-1.5 text-xs font-bold text-white"
+                      className="rounded-lg bg-brand px-2.5 py-1.5 text-xs font-bold text-white shadow-sm"
                     >
                       + Assign
                     </button>

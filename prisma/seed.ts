@@ -16,7 +16,7 @@ async function main() {
   await prisma.shopSettings.create({
     data: {
       id: "default",
-      shopName: "Corner Shop",
+      shopName: "Ngroceries",
       coverageTimeoutMinutes: 20,
       autoAcceptCoverage: true,
     },

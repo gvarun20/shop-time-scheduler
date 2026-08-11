@@ -1,6 +1,6 @@
-# Corner Shop · Shift Scheduler
+# Ngroceries · Shift Scheduler
 
-Mobile-first shift calendar and coverage alert app for a small retail shop with student part-timers.
+Mobile-first shift calendar and coverage alert app for **Ngroceries** staff.
 
 Built from `shop-scheduler-cursor-prompt.md`.
 

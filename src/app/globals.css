@@ -1,20 +1,18 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #eef3f1;
-  --bg-elevated: #f7faf8;
-  --ink: #14201c;
-  --muted: #5a6b64;
-  --line: #d5e0db;
-  --brand: #0f6b5c;
-  --brand-deep: #0a4f44;
-  --accent: #e85d4c;
+  --bg: #f2f6f3;
+  --bg-elevated: #ffffff;
+  --ink: #12241c;
+  --muted: #5d7268;
+  --line: #d7e3dc;
+  --brand: #1b7a4c;
+  --brand-deep: #0f5233;
+  --accent: #ef6c2f;
   --ok: #1f8a5b;
-  --warn: #c47a12;
-  --danger: #c0392b;
-  --confirmed: #1f8a5b;
-  --needs: #c47a12;
-  --open: #c0392b;
+  --warn: #d08912;
+  --danger: #c4473a;
+  --surface-soft: #e8f2ec;
 }
 
 @theme inline {
@@ -29,15 +27,16 @@
   --color-ok: var(--ok);
   --color-warn: var(--warn);
   --color-danger: var(--danger);
+  --color-surface-soft: var(--surface-soft);
   --font-sans: var(--font-body);
   --font-display: var(--font-display);
 }
 
 body {
   background:
-    radial-gradient(1200px 600px at 10% -10%, rgba(15, 107, 92, 0.12), transparent 55%),
-    radial-gradient(900px 500px at 100% 0%, rgba(232, 93, 76, 0.08), transparent 50%),
-    linear-gradient(180deg, #f4f8f6 0%, var(--bg) 40%, #e8efec 100%);
+    radial-gradient(900px 480px at 0% -5%, rgba(27, 122, 76, 0.14), transparent 55%),
+    radial-gradient(700px 420px at 100% 0%, rgba(239, 108, 47, 0.1), transparent 50%),
+    linear-gradient(180deg, #f7fbf8 0%, var(--bg) 45%, #e9f0eb 100%);
   color: var(--ink);
   font-family: var(--font-body), system-ui, sans-serif;
   min-height: 100vh;
@@ -48,12 +47,13 @@ h2,
 h3,
 .font-display {
   font-family: var(--font-display), var(--font-body), system-ui, sans-serif;
+  letter-spacing: -0.02em;
 }
 
 @keyframes rise-in {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(12px);
   }
   to {
     opacity: 1;
@@ -61,13 +61,22 @@ h3,
   }
 }
 
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 @keyframes pulse-soft {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(232, 93, 76, 0.35);
+    box-shadow: 0 0 0 0 rgba(208, 137, 18, 0.35);
   }
   50% {
-    box-shadow: 0 0 0 8px rgba(232, 93, 76, 0);
+    box-shadow: 0 0 0 8px rgba(208, 137, 18, 0);
   }
 }
 
@@ -75,6 +84,16 @@ h3,
   animation: rise-in 0.45s ease-out both;
 }
 
+.animate-fade {
+  animation: fade-in 0.2s ease-out both;
+}
+
 .animate-pulse-soft {
   animation: pulse-soft 1.8s ease-in-out infinite;
+}
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.86);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(215, 227, 220, 0.9);
 }

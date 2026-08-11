@@ -15,17 +15,17 @@ const display = Fraunces({
 });
 
 export const metadata: Metadata = {
-  title: "Corner Shop · Shift Scheduler",
-  description: "Shared shift schedule and instant coverage alerts for student retail staff.",
+  title: "Ngroceries · Shift Scheduler",
+  description: "Shared shift schedule and instant coverage alerts for Ngroceries staff.",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
-    title: "Shop Shifts",
+    title: "Ngroceries",
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0f6b5c",
+  themeColor: "#1b7a4c",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,

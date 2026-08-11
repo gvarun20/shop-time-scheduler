@@ -96,7 +96,7 @@ export default function AdminPage() {
     <div className="space-y-8">
       <div>
         <h1 className="font-display text-2xl">Manager desk</h1>
-        <p className="text-sm text-muted">Create shifts, add staff, keep the board accurate.</p>
+        <p className="text-sm text-muted">Create shifts, add staff, keep the Ngroceries board accurate.</p>
       </div>
 
       {message && (

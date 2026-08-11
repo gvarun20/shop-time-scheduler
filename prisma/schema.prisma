@@ -52,7 +52,7 @@ model StoreHours {
 
 model ShopSettings {
   id                     String  @id @default("default")
-  shopName               String  @default("Corner Shop")
+  shopName               String  @default("Ngroceries")
   minShiftMinutes        Int     @default(60)
   maxShiftMinutes        Int     @default(480)
   minNoticeMinutes       Int     @default(120)
