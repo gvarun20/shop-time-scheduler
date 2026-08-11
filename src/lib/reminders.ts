@@ -1,7 +1,7 @@
 import { prisma } from "./db";
 import { addDays, startOfDay } from "./time";
-import { sendWhatsAppToUserIds } from "./whatsapp";
-import { notifyUser } from "./notify";
+import { sendWhatsApp } from "./whatsapp";
+import { notifyUser, escalateToAdmins } from "./notify";
 
 function shopOffset() {
   return process.env.SHOP_UTC_OFFSET || "+02:00";
@@ -12,11 +12,15 @@ function shiftStartDate(date: Date, startTime: string): Date {
   return new Date(`${key}T${startTime}:00${shopOffset()}`);
 }
 
-/** Send ~2h-before reminders. Safe to call often (uses reminderSentAt). */
+/**
+ * Queue ~2h-before reminders.
+ * In-app → employee.
+ * WhatsApp draft → manager sends FROM shop number TO that employee.
+ */
 export async function sendDueShiftReminders() {
   const now = Date.now();
-  const windowStart = now + (2 * 60 - 25) * 60 * 1000; // ~1h35
-  const windowEnd = now + (2 * 60 + 25) * 60 * 1000; // ~2h25
+  const windowStart = now + (2 * 60 - 25) * 60 * 1000;
+  const windowEnd = now + (2 * 60 + 25) * 60 * 1000;
 
   const from = startOfDay(new Date());
   const to = addDays(from, 3);
@@ -48,16 +52,21 @@ export async function sendDueShiftReminders() {
       type: "REMINDER",
       message,
       relatedId: shift.id,
-      whatsapp: true,
+      whatsapp: false,
     });
 
-    const managers = await prisma.user.findMany({
-      where: { role: "ADMIN" },
-      select: { id: true },
-    });
-    await sendWhatsAppToUserIds(
-      managers.map((m) => m.id),
-      `Ngroceries: ${shift.assignedUser.name} has a shift in ~2 hours (${dateLabel} ${shift.startTime}).`,
+    if (shift.assignedUser.phone) {
+      await sendWhatsApp({
+        toPhone: shift.assignedUser.phone,
+        toUserId: shift.assignedUser.id,
+        toName: shift.assignedUser.name,
+        body: `Ngroceries: ${message}`,
+      });
+    }
+
+    await escalateToAdmins(
+      `Send 2h reminder on WhatsApp (from shop number) to ${shift.assignedUser.name} for ${dateLabel} ${shift.startTime}.`,
+      shift.id,
     );
 
     await prisma.shift.update({

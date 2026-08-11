@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import type { Shift } from "./ShiftCalendar";
-import { WhatsAppLinkList, type WaLink } from "./WhatsAppLinkList";
 
 export function LeaveEarlyModal({
   shift,
@@ -16,10 +15,7 @@ export function LeaveEarlyModal({
   const [leaveAt, setLeaveAt] = useState(shift.startTime);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<{
-    candidates: { name: string }[];
-    whatsappLinks: WaLink[];
-  } | null>(null);
+  const [done, setDone] = useState(false);
 
   const submit = async () => {
     setBusy(true);
@@ -35,21 +31,18 @@ export function LeaveEarlyModal({
       setError(data.error || "Request failed");
       return;
     }
-    setResult({
-      candidates: data.candidates || [],
-      whatsappLinks: data.whatsappLinks || [],
-    });
+    setDone(true);
   };
 
   return (
     <div className="fixed inset-0 z-[110] flex items-end justify-center bg-ink/40 p-4 sm:items-center">
-      <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-3xl border border-line bg-white p-5 shadow-xl animate-rise">
-        {!result ? (
+      <div className="w-full max-w-md rounded-3xl border border-line bg-white p-5 shadow-xl animate-rise">
+        {!done ? (
           <>
             <h2 className="font-display text-xl">Need cover?</h2>
             <p className="mt-1 text-sm text-muted">
-              We&apos;ll alert the team in-app and prepare free WhatsApp messages for{" "}
-              {leaveAt || "…"}–{shift.endTime}.
+              The team gets an in-app alert. The manager will WhatsApp everyone from the
+              shop number.
             </p>
             <label className="mt-4 block text-sm font-semibold">
               I need to leave at
@@ -77,23 +70,17 @@ export function LeaveEarlyModal({
                 onClick={submit}
                 className="flex-1 rounded-xl bg-accent px-3 py-3 text-sm font-bold text-white disabled:opacity-60"
               >
-                {busy ? "Sending…" : "Broadcast alert"}
+                {busy ? "Sending…" : "Request coverage"}
               </button>
             </div>
           </>
         ) : (
           <>
-            <h2 className="font-display text-xl">Team alerted</h2>
+            <h2 className="font-display text-xl">Request sent</h2>
             <p className="mt-2 text-sm text-muted">
-              In-app alerts are live.
-              {result.candidates.length === 0
-                ? " No availability matches — manager was escalated."
-                : ` ${result.candidates.length} people look available.`}
+              Everyone was alerted in the app. The manager will send WhatsApp from the
+              shop number so the team can pick up coverage.
             </p>
-            <WhatsAppLinkList
-              links={result.whatsappLinks}
-              title="Tap to WhatsApp the team (free)"
-            />
             <button
               type="button"
               onClick={onDone}

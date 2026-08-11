@@ -78,6 +78,8 @@ export default function AdminPage() {
       createdAt: string;
     }[]
   >([]);
+  const [shopPhone, setShopPhone] = useState<string | null>(null);
+  const [pendingWa, setPendingWa] = useState(0);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editPhone, setEditPhone] = useState("");
   const [editName, setEditName] = useState("");
@@ -126,8 +128,29 @@ export default function AdminPage() {
     const data = await res.json();
     if (res.ok) {
       setWaMessages(data.messages || []);
+      setShopPhone(data.shopPhone || null);
+      setPendingWa(data.pendingCount || 0);
     }
   }, []);
+
+  useEffect(() => {
+    const t = setInterval(loadWhatsApp, 8000);
+    return () => clearInterval(t);
+  }, [loadWhatsApp]);
+
+  const openShopWhatsApp = async (m: {
+    id: string;
+    link: string | null;
+  }) => {
+    if (!m.link) return;
+    window.open(m.link, "_blank", "noopener,noreferrer");
+    await fetch("/api/whatsapp", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: m.id }),
+    });
+    loadWhatsApp();
+  };
 
   useEffect(() => {
     loadUsers();
@@ -253,8 +276,19 @@ export default function AdminPage() {
       return;
     }
     if (data.ok || data.message?.status === "ready") {
-      setMessage(`WhatsApp ready for ${u.name} (${u.phone}). Tap Open WA in the log below.`);
-      if (data.message?.link) window.open(data.message.link, "_blank", "noopener,noreferrer");
+      setMessage(
+        `WhatsApp draft ready for ${u.name}. Open WhatsApp as shop number ${shopPhone || ""}, then Send.`,
+      );
+      if (data.message?.link) {
+        window.open(data.message.link, "_blank", "noopener,noreferrer");
+        if (data.message.id) {
+          await fetch("/api/whatsapp", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: data.message.id }),
+          });
+        }
+      }
     } else {
       setError(data.message?.error || data.error || "Could not prepare WhatsApp link.");
     }
@@ -450,39 +484,54 @@ export default function AdminPage() {
         </button>
       </form>
 
+      {pendingWa > 0 && (
+        <p className="rounded-xl border border-accent/30 bg-accent/10 px-3 py-3 text-sm font-semibold text-accent">
+          {pendingWa} WhatsApp message(s) waiting — open WhatsApp logged in as shop number{" "}
+          {shopPhone || "+46722247856"}, then tap Send from shop below.
+        </p>
+      )}
+
       <section className="space-y-3 rounded-2xl border border-line bg-white p-4 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h2 className="font-display text-lg">WhatsApp alerts (free)</h2>
+            <h2 className="font-display text-lg">Shop WhatsApp sends</h2>
             <p className="text-sm text-muted">
-              Uses free wa.me links — no Twilio, no paid API. Tap Open WA to send from your phone.
+              Messages go out <strong>only from the shop number</strong>
+              {shopPhone ? ` (${shopPhone})` : " (+46722247856)"}. Log into that WhatsApp,
+              then tap Send for each person.
             </p>
           </div>
           <span className="rounded-full bg-ok/15 px-3 py-1 text-xs font-bold text-ok">
-            Free · always on
+            From shop only · free
           </span>
         </div>
-        <ul className="max-h-64 space-y-2 overflow-y-auto">
+        <ul className="max-h-80 space-y-2 overflow-y-auto">
           {waMessages.length === 0 && (
-            <li className="py-6 text-center text-sm text-muted">No WhatsApp messages yet</li>
+            <li className="py-6 text-center text-sm text-muted">No WhatsApp drafts yet</li>
           )}
           {waMessages.map((m) => (
-            <li key={m.id} className="rounded-xl border border-line bg-bg px-3 py-2 text-sm">
+            <li
+              key={m.id}
+              className={`rounded-xl border px-3 py-2 text-sm ${
+                m.status === "ready"
+                  ? "border-accent/40 bg-accent/10"
+                  : "border-line bg-bg"
+              }`}
+            >
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="font-semibold text-ink">{m.toPhone}</span>
+                <span className="font-semibold text-ink">To {m.toPhone}</span>
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] font-bold uppercase tracking-wide text-muted">
                     {m.status}
                   </span>
-                  {m.link && (
-                    <a
-                      href={m.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="rounded-lg bg-brand px-2 py-1 text-[11px] font-bold text-white"
+                  {m.link && m.status === "ready" && (
+                    <button
+                      type="button"
+                      onClick={() => openShopWhatsApp(m)}
+                      className="rounded-lg bg-brand px-2.5 py-1 text-[11px] font-bold text-white"
                     >
-                      Open WA
-                    </a>
+                      Send from shop
+                    </button>
                   )}
                 </div>
               </div>

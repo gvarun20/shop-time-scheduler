@@ -11,7 +11,7 @@ Built from `shop-scheduler-cursor-prompt.md`.
 - Employee availability profiles
 - Admin shift assignment + staff management
 - **Leave early** flow: 2 taps → WhatsApp + in-app broadcast to all staff → first accept wins
-- WhatsApp alerts (**free wa.me links**): 2h reminders, coverage needed, coverage accepted
+- WhatsApp (**free, from shop number only**): manager sends 2h reminders + coverage broadcasts
 - Auto-escalation to managers when nobody is available / request expires
 - In-app notification bell (PWA-ready manifest)
 
@@ -47,15 +47,16 @@ Open [http://localhost:3000](http://localhost:3000)
 
 > Production needs free Vercel + free Postgres (`DATABASE_URL`) + `AUTH_SECRET`. Optional: `CRON_SECRET`, `SHOP_UTC_OFFSET`.
 
-### WhatsApp (100% free)
+### WhatsApp (100% free, shop number only)
 
-No Twilio. No paid SMS API.
+No Twilio. No paid API.
 
-The app builds `wa.me` links with the message pre-filled. Anyone taps **Open WA** on their phone → WhatsApp opens → they press Send. That uses normal personal WhatsApp (free).
+Flow:
+1. Employee requests coverage / reminder is due → app prepares messages
+2. **Manager** opens WhatsApp logged in as the **shop number** (`+46722247856`)
+3. Manager taps **Send from shop** for each person → WhatsApp opens → Send
 
-- Leave early / coverage accept → shows Open WA buttons for each teammate
-- Manager → WhatsApp alerts log → Open WA for reminders too
-- Put numbers on each person (e.g. Employee 1 `+46737540940`) via Manager → Edit
+Employees never send the broadcast from their own numbers.
 
 CI workflow template lives at `docs/github-ci.yml` (move to `.github/workflows/ci.yml` after granting the GitHub `workflow` OAuth scope).
 
