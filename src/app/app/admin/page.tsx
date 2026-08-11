@@ -71,6 +71,9 @@ export default function AdminPage() {
   const [waMessages, setWaMessages] = useState<
     { id: string; toPhone: string; body: string; status: string; error: string | null; createdAt: string }[]
   >([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editPhone, setEditPhone] = useState("");
+  const [editName, setEditName] = useState("");
 
   useEffect(() => {
     if (user && user.role !== "ADMIN") router.replace("/app");
@@ -199,6 +202,60 @@ export default function AdminPage() {
     loadUsers();
     loadTeamAvailability();
     loadHours();
+  };
+
+  const startEdit = (u: User) => {
+    setEditingId(u.id);
+    setEditPhone(u.phone || "");
+    setEditName(u.name);
+    setError(null);
+  };
+
+  const saveEdit = async (userId: string) => {
+    setError(null);
+    setMessage(null);
+    const res = await fetch(`/api/users/${userId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: editName.trim() || undefined,
+        phone: editPhone.trim() || null,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setError(data.error || "Could not update");
+      return;
+    }
+    setMessage(`Updated ${data.user.name}${data.user.phone ? ` · ${data.user.phone}` : ""}`);
+    setEditingId(null);
+    loadUsers();
+    loadTeamAvailability();
+  };
+
+  const sendTestWhatsApp = async (u: User) => {
+    setError(null);
+    setMessage(null);
+    const res = await fetch("/api/whatsapp/test", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: u.id }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setError(data.error || "Test send failed");
+      return;
+    }
+    if (data.ok) {
+      setMessage(`WhatsApp test sent to ${u.name} (${u.phone}).`);
+    } else if (!data.configured) {
+      setError(
+        "Twilio is not configured yet — message was logged only. Add TWILIO_* env vars on Vercel to send for real.",
+      );
+    } else {
+      setError(data.message?.error || "WhatsApp send failed — check the log below.");
+    }
+    loadWhatsApp();
   };
 
   if (user?.role !== "ADMIN") return null;
@@ -483,23 +540,81 @@ export default function AdminPage() {
         <h2 className="font-display text-lg">Team</h2>
         <ul className="mt-3 divide-y divide-line">
           {users.map((u) => (
-            <li key={u.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
-              <div className="min-w-0">
-                <p className="font-medium text-ink">{u.name}</p>
-                <p className="truncate text-muted">
-                  {u.email}
-                  {u.phone ? ` · WhatsApp ${u.phone}` : " · no WhatsApp"}
-                  {` · ${u.role === "ADMIN" ? "Manager" : "Employee"}`}
-                </p>
-              </div>
-              {u.role === "EMPLOYEE" && (
-                <button
-                  type="button"
-                  onClick={() => deleteEmployee(u)}
-                  className="shrink-0 rounded-lg border border-danger/30 bg-danger/10 px-3 py-1.5 text-xs font-bold text-danger"
-                >
-                  Delete
-                </button>
+            <li key={u.id} className="space-y-2 py-3 text-sm">
+              {editingId === u.id ? (
+                <div className="space-y-2 rounded-xl border border-brand/30 bg-surface-soft p-3">
+                  <label className="block text-xs font-semibold uppercase tracking-wide text-muted">
+                    Name
+                    <input
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      className="mt-1 w-full rounded-lg border border-line bg-white px-3 py-2 text-sm font-medium text-ink"
+                    />
+                  </label>
+                  <label className="block text-xs font-semibold uppercase tracking-wide text-muted">
+                    WhatsApp number
+                    <input
+                      value={editPhone}
+                      onChange={(e) => setEditPhone(e.target.value)}
+                      placeholder="+46737540940"
+                      className="mt-1 w-full rounded-lg border border-line bg-white px-3 py-2 text-sm font-medium text-ink"
+                    />
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => saveEdit(u.id)}
+                      className="rounded-lg bg-brand px-3 py-1.5 text-xs font-bold text-white"
+                    >
+                      Save
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditingId(null)}
+                      className="rounded-lg border border-line bg-white px-3 py-1.5 text-xs font-semibold"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-medium text-ink">{u.name}</p>
+                    <p className="truncate text-muted">
+                      {u.email}
+                      {u.phone ? ` · WhatsApp ${u.phone}` : " · no WhatsApp"}
+                      {` · ${u.role === "ADMIN" ? "Manager" : "Employee"}`}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 flex-wrap justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => startEdit(u)}
+                      className="rounded-lg border border-line bg-white px-3 py-1.5 text-xs font-bold text-ink"
+                    >
+                      Edit
+                    </button>
+                    {u.phone && (
+                      <button
+                        type="button"
+                        onClick={() => sendTestWhatsApp(u)}
+                        className="rounded-lg border border-brand/30 bg-brand/10 px-3 py-1.5 text-xs font-bold text-brand-deep"
+                      >
+                        Test WA
+                      </button>
+                    )}
+                    {u.role === "EMPLOYEE" && (
+                      <button
+                        type="button"
+                        onClick={() => deleteEmployee(u)}
+                        className="rounded-lg border border-danger/30 bg-danger/10 px-3 py-1.5 text-xs font-bold text-danger"
+                      >
+                        Delete
+                      </button>
+                    )}
+                  </div>
+                </div>
               )}
             </li>
           ))}
